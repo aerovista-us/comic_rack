@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Reader</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body class="reader-body">
+  <header class="reader-topbar">
+    <button class="btn" id="btnBack" aria-label="Back">← Rack</button>
+
+    <div class="reader-title">
+      <div class="reader-name" id="comicName">Loading…</div>
+      <div class="reader-meta" id="comicMeta"></div>
+    </div>
+
+    <div class="reader-actions">
+      <button class="btn" id="btnPrev" aria-label="Previous page">Prev</button>
+      <button class="btn" id="btnNext" aria-label="Next page">Next</button>
+    </div>
+  </header>
+
+  <main class="reader-stage" id="readerStage">
+    <div class="flip-wrap" id="flipWrap">
+      <div id="flipbook" class="flipbook" aria-label="Comic reader"></div>
+    </div>
+    <div class="reader-headline" id="readerHeadline" aria-live="polite"></div>
+    <div class="reader-hint" id="hint">Swipe to turn pages</div>
+  </main>
+
+  <!-- StPageFlip / page-flip -->
+  <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+  <script src="assets/reader.js"></script>
+</body>
+</html>

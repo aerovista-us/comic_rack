@@ -1,9 +1,12 @@
 {
-  "id": "mag1",
+  "id": "duo.ep1",
   "title": "The Afterparty Apartment",
+  "subtitle": "2 pages",
+  "cover": "cover.png",
   "aspect": 0.75,
+  "theme": "noir",
   "pages": [
     { "src": "p01.png", "headline": "Door cracked. Bass leaking." },
-    { "src": "p02.png", "headline": "Someone’s phone won’t stop buzzing." }
+    { "src": "p02.png", "headline": "Someone's phone won't stop buzzing." }
   ]
 }

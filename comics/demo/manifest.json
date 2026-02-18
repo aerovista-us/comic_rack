@@ -1,0 +1,10 @@
+{
+  "id": "demo",
+  "title": "Demo Comic",
+  "subtitle": "5 pages • PNG • Mobile flip",
+  "cover": "cover.png",
+  "pageDir": "pages",
+  "pages": ["01.png", "02.png", "03.png", "04.png", "05.png"],
+  "aspect": 1.5,
+  "theme": "default"
+}
