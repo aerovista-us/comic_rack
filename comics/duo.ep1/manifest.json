@@ -1,0 +1,9 @@
+{
+  "id": "mag1",
+  "title": "The Afterparty Apartment",
+  "aspect": 0.75,
+  "pages": [
+    { "src": "p01.png", "headline": "Door cracked. Bass leaking." },
+    { "src": "p02.png", "headline": "Someone’s phone won’t stop buzzing." }
+  ]
+}
