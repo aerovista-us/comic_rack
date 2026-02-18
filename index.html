@@ -1,26 +1,561 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Comic Rack</title>
-  <link rel="stylesheet" href="assets/styles.css" />
-</head>
-<body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-dot"></div>
-      <div>
-        <div class="brand-title">Comic Rack</div>
-        <div class="brand-sub">Tap a cover to read</div>
+<!-- ULTRA RARE HOLO TRANSFORMATION CARD — Full screen, phone tilt = hold the card -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#05060a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<style>
+  *{ box-sizing:border-box; }
+  html, body{ margin:0; height:100%; overflow:hidden; background:#05060a; -webkit-tap-highlight-color:transparent; }
+
+  :root{
+    --radius: 22px;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bot: env(safe-area-inset-bottom);
+    --edge: 14px;
+    /* Zoom out: card fits inside viewport with left/right border and room above/below menu */
+    --card-w: min(calc(100vw - 2 * var(--edge)), calc((100dvh - 2 * var(--edge)) / 1.42));
+    --card-h: calc(var(--card-w) * 1.42);
+  }
+
+  .ur-wrap{
+    position:fixed; inset:0;
+    display:flex; justify-content:center; align-items:center;
+    padding: var(--safe-top) var(--edge) var(--safe-bot);
+    min-height:100dvh;
+  }
+  .ur-scene{
+    perspective: 1600px;
+    transform: scale(0.92);
+    transform-origin: center center;
+  }
+
+  .ur-card{
+    width: var(--card-w);
+    height: var(--card-h);
+    max-width: 100vw;
+    max-height: 100dvh;
+    position: relative;
+    transform-style: preserve-3d;
+    border-radius: var(--radius);
+    box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 10px 25px rgba(0,0,0,.35);
+    -webkit-user-select:none;
+    user-select:none;
+    touch-action:none;
+    will-change: transform;
+  }
+
+  .ur-inner{
+    position:absolute; inset:0;
+    border-radius: var(--radius);
+    transform-style: preserve-3d;
+    transition: transform 500ms cubic-bezier(.2,.8,.2,1);
+  }
+
+  .ur-card.is-flipped .ur-inner{ transform: rotateY(180deg); }
+
+  .ur-face{
+    position:absolute; inset:0;
+    border-radius: var(--radius);
+    overflow:hidden;
+    backface-visibility:hidden;
+    background:#05060a;
+  }
+  .ur-back{ transform: rotateY(180deg); }
+
+  /* Shared overlays */
+  .ur-face::before{
+    content:"";
+    position:absolute; inset:0;
+    border-radius: var(--radius);
+    pointer-events:none;
+    background:
+      radial-gradient(1000px 700px at 30% 20%, rgba(255,255,255,.10), transparent 55%),
+      radial-gradient(900px 700px at 70% 80%, rgba(255,255,255,.08), transparent 60%),
+      linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.03) 40%, rgba(255,255,255,.08));
+    mix-blend-mode: screen;
+    opacity:.55;
+  }
+
+  .ur-border{
+    position:absolute; inset:10px;
+    border-radius: calc(var(--radius) - 10px);
+    border: 1px solid rgba(255,255,255,.18);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.35);
+    pointer-events:none;
+    transform: translateZ(5px);
+  }
+
+  /* Hologram morph: three images crossfade */
+  .ur-panels{
+    position:absolute; inset:0;
+    overflow:hidden;
+    border-radius: inherit;
+  }
+  .ur-morph-img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    opacity:0;
+    transition: opacity .4s cubic-bezier(.4,.0,.2,1), filter .4s ease;
+    filter: contrast(1.05) saturate(1.08) brightness(1);
+    will-change: opacity, filter;
+    mix-blend-mode: normal;
+  }
+  .ur-morph-img.active{
+    opacity:1;
+    filter: contrast(1.08) saturate(1.12) brightness(1.02);
+  }
+  .ur-morph-img.morphing{
+    mix-blend-mode: screen;
+    filter: contrast(1.1) saturate(1.15) brightness(1.05) hue-rotate(5deg);
+  }
+
+  .ur-holo{
+    position:absolute; inset:-40%;
+    background:
+      conic-gradient(from 180deg,
+        rgba(0,255,255,.0),
+        rgba(255,0,255,.4),
+        rgba(0,255,255,.3),
+        rgba(255,255,255,.3),
+        rgba(0,255,255,.25),
+        rgba(255,0,255,.35),
+        rgba(0,255,255,.0)
+      );
+    mix-blend-mode: screen;
+    opacity: .6;
+    filter: blur(0.3px) saturate(1.3);
+    pointer-events:none;
+    transform: translateZ(30px);
+    will-change: transform;
+  }
+
+  .ur-noise{
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,.035),
+      rgba(255,255,255,.035) 1px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0) 4px
+    );
+    mix-blend-mode: overlay;
+    opacity:.28;
+    pointer-events:none;
+    transform: translateZ(25px);
+  }
+
+  /* Title + stamp */
+  .ur-title{
+    position:absolute; left:18px; right:18px; top:16px;
+    padding:14px 14px 12px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.42);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.15);
+    transform: translateZ(70px);
+  }
+  .ur-title .rarity{ font: 800 12px/1 system-ui; letter-spacing:.22em; opacity:.9; }
+  .ur-title .name{ margin-top:6px; font: 950 22px/1.05 system-ui; letter-spacing:.06em; }
+  .ur-title .sub{ margin-top:8px; font: 650 12px/1.2 system-ui; opacity:.85; }
+
+  .ur-stamp{
+    position:absolute; right:18px; top:18px;
+    width:78px; height:78px;
+    border-radius: 18px;
+    background: rgba(0,0,0,.40);
+    border:1px solid rgba(255,255,255,.16);
+    display:flex; align-items:center; justify-content:center;
+    transform: translateZ(85px);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.35);
+  }
+  .ur-stamp span{
+    font: 950 12px/1 system-ui;
+    letter-spacing:.16em;
+    text-align:center;
+    opacity:.92;
+  }
+
+  .ur-lore{
+    position:absolute; left:18px; right:18px; bottom:18px;
+    padding:14px 14px 12px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.50);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.15);
+    transform: translateZ(70px);
+  }
+  .ur-lore .label{ font: 850 11px/1 system-ui; letter-spacing:.24em; opacity:.9; }
+  .ur-lore .txt{ margin-top:8px; font: 650 13px/1.35 system-ui; opacity:.92; }
+
+  .ur-cta{
+    position:absolute; left:18px; bottom:18px;
+    padding:8px 10px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.55);
+    border:1px solid rgba(255,255,255,.14);
+    font: 750 11px/1 system-ui;
+    letter-spacing:.18em;
+    opacity:.88;
+    transform: translateZ(90px);
+  }
+
+  /* BACK SIDE (Lore + stats) */
+  .ur-back{
+    background:
+      radial-gradient(900px 700px at 30% 20%, rgba(0,255,255,.12), transparent 55%),
+      radial-gradient(900px 700px at 70% 80%, rgba(255,0,255,.10), transparent 60%),
+      linear-gradient(180deg, #070a12, #04050a);
+  }
+
+  .ur-back-grid{
+    position:absolute; inset:0;
+    background:
+      linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity:.18;
+    mix-blend-mode: overlay;
+  }
+
+  .ur-back-head{
+    position:absolute; left:18px; right:18px; top:16px;
+    padding:14px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.46);
+    border: 1px solid rgba(255,255,255,.15);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    transform: translateZ(40px);
+  }
+  .ur-back-head .title{
+    font: 950 18px/1.1 system-ui;
+    letter-spacing:.18em;
+  }
+  .ur-back-head .id{
+    margin-top:8px;
+    font: 750 12px/1.2 system-ui;
+    opacity:.85;
+  }
+
+  .ur-back-body{
+    position:absolute; left:18px; right:18px; top:120px; bottom:18px;
+    padding:14px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.44);
+    border: 1px solid rgba(255,255,255,.12);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    transform: translateZ(40px);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .ur-stat-row{
+    display:grid;
+    grid-template-columns: 1fr auto;
+    gap:10px;
+    padding:10px 10px;
+    border-radius: 12px;
+    border:1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.03);
+  }
+  .ur-stat-row b{
+    font: 850 12px/1 system-ui;
+    letter-spacing:.16em;
+  }
+  .ur-stat-row span{
+    font: 800 12px/1 system-ui;
+    opacity:.9;
+  }
+
+  .ur-back-lore{
+    padding:12px;
+    border-radius: 12px;
+    border:1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.03);
+    font: 650 13px/1.35 system-ui;
+    opacity:.92;
+  }
+
+  .ur-back-tip{
+    margin-top:auto;
+    text-align:center;
+    font: 700 11px/1.2 system-ui;
+    letter-spacing:.16em;
+    opacity:.75;
+  }
+
+  .ur-hint{
+    position:fixed;
+    left:0; right:0; bottom: calc(12px + var(--safe-bot));
+    text-align:center;
+    font: 650 12px/1.2 system-ui;
+    opacity:.6;
+    pointer-events:none;
+    z-index:2;
+  }
+
+  .ur-motion-prompt{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(5,6,10,.92);
+    z-index:10;
+    padding: 24px;
+    text-align:center;
+  }
+  .ur-motion-prompt.hidden{ display:none; }
+  .ur-motion-prompt button{
+    padding: 14px 28px;
+    font: 700 16px/1 system-ui;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.25);
+    background: rgba(255,255,255,.08);
+    color: #e9ecff;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ur-motion-prompt button:active{ transform: scale(0.98); }
+  .ur-motion-prompt p{ margin:0 0 20px; font-size:14px; opacity:.9; max-width:280px; }
+</style>
+
+<div class="ur-wrap">
+  <div class="ur-scene">
+    <div class="ur-card" id="urCard" aria-label="Ultra Rare B1LLYG04T Transformation Card">
+
+      <div class="ur-inner" id="urInner">
+
+        <!-- FRONT -->
+        <div class="ur-face ur-front" id="frontFace">
+          <div class="ur-panels" id="panelWrap">
+            <img class="ur-morph-img" id="img1" src="images/lowfreq/img_1.png" alt="Human" />
+            <img class="ur-morph-img" id="img2" src="images/lowfreq/img_2.png" alt="Awakening" />
+            <img class="ur-morph-img" id="img3" src="images/lowfreq/img_3.png" alt="Synthetic" />
+          </div>
+
+          <div class="ur-holo" id="holo"></div>
+          <div class="ur-noise"></div>
+
+          <div class="ur-title">
+            <div class="rarity">ULTRA • RARE</div>
+            <div class="name">B1LLYG04T // LOWFREQ</div>
+            <div class="sub">Bass-forward. Gritty. Still coherent.</div>
+          </div>
+
+          <div class="ur-stamp"><span>7718<br/>SHIFT</span></div>
+
+          <div class="ur-lore">
+            <div class="label">TRANSFORMATION</div>
+            <div class="txt">
+              Tilt to phase the signal: <b>Human → Awake → Synthetic</b>.<br/>
+              Tap to flip for lore + stats.
+            </div>
+          </div>
+
+          <div class="ur-cta">TAP • FLIP</div>
+          <div class="ur-border"></div>
+        </div>
+
+        <!-- BACK -->
+        <div class="ur-face ur-back" id="backFace">
+          <div class="ur-back-grid"></div>
+          <div class="ur-noise"></div>
+
+          <div class="ur-back-head">
+            <div class="title">LOWFREQ DOSSIER</div>
+            <div class="id">ALIAS: <b>B1LLYG04T</b> • ROLE: <b>BASS / LOW-END ARCHITECT</b> • CLASS: <b>ANOMALY</b></div>
+          </div>
+
+          <div class="ur-back-body">
+            <div class="ur-stat-row"><b>LOW-END</b><span>99</span></div>
+            <div class="ur-stat-row"><b>GRIT</b><span>92</span></div>
+            <div class="ur-stat-row"><b>CONTROL</b><span>86</span></div>
+            <div class="ur-stat-row"><b>COHERENCE</b><span>88</span></div>
+
+            <div class="ur-back-lore">
+              <b>Transformation Log:</b><br/>
+              He didn’t “become” Synthetic — the signal simply turned the
+              volume up on what was already there. When the crowd hits the
+              first drop, his bassline anchors reality long enough for the
+              Collective to appear without tearing the room apart.<br/><br/>
+              <b>Signature:</b> sub pressure you can feel in your sternum, followed by a clean, surgical rebound.
+            </div>
+
+            <div class="ur-back-tip">TAP • FLIP BACK</div>
+          </div>
+
+          <div class="ur-border"></div>
+        </div>
+
       </div>
     </div>
-  </header>
+  </div>
+</div>
 
-  <main class="rack">
-    <section class="rack-grid" id="rackGrid" aria-label="Comic rack"></section>
-  </main>
+<div class="ur-hint" id="urHint">Tilt to morph the hologram: Human → Awakening → Synthetic. Tap to flip.</div>
 
-  <script src="assets/rack.js"></script>
-</body>
-</html>
+<div class="ur-motion-prompt" id="motionPrompt">
+  <div>
+    <p>Hold the card with motion.<br/>Allow device orientation so tilting your phone moves the card.</p>
+    <button type="button" id="motionBtn">Enable motion</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const card = document.getElementById('urCard');
+  const holo = document.getElementById('holo');
+  const img1 = document.getElementById('img1');
+  const img2 = document.getElementById('img2');
+  const img3 = document.getElementById('img3');
+  const motionPrompt = document.getElementById('motionPrompt');
+  const motionBtn = document.getElementById('motionBtn');
+  const hint = document.getElementById('urHint');
+
+  let rect, pointerActive = false;
+  let useGyro = false;
+  let gyroTiltX = 0, gyroTiltY = 0;
+
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+  function setState(nx){
+    if (!img1 || !img2 || !img3) return;
+    
+    // nx: 0 = Human (img1), 0.5 = Awakening (img2), 1 = Synthetic (img3)
+    const w1 = clamp(1 - (nx * 2), 0, 1);
+    const w3 = clamp((nx * 2) - 1, 0, 1);
+    const w2 = 1 - Math.abs(nx - 0.5) * 2;
+    
+    img1.style.opacity = String(w1);
+    img2.style.opacity = String(w2);
+    img3.style.opacity = String(w3);
+    
+    const weights = [w1, w2, w3];
+    [img1, img2, img3].forEach((img, i) => {
+      img.classList.remove('active', 'morphing');
+      const w = weights[i];
+      if (w >= 0.95) img.classList.add('active');
+      else if (w > 0.05) img.classList.add('morphing');
+    });
+  }
+
+  function applyTilt(rotateX, rotateY, holoX, holoY, nx){
+    card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    if (holo) holo.style.transform = `translate(${holoX}px, ${holoY}px) translateZ(30px)`;
+    if (nx != null && !card.classList.contains('is-flipped')) setState(nx);
+  }
+
+  function updateFromPointer(clientX, clientY){
+    if(!rect) rect = card.getBoundingClientRect();
+    const px = (clientX - rect.left) / rect.width;
+    const py = (clientY - rect.top) / rect.height;
+    const nx = clamp(px, 0, 1);
+    const ny = clamp(py, 0, 1);
+    const tiltX = (ny - 0.5) * -12;
+    const tiltY = (nx - 0.5) * 16;
+    const hx = (0.5 - px) * 140;
+    const hy = (0.5 - py) * 140;
+    applyTilt(tiltX, tiltY, hx, hy, nx);
+  }
+
+  function onPointerLeave(){
+    pointerActive = false;
+    rect = null;
+    if (!useGyro) {
+      applyTilt(0, 0, 0, 0, 0.5);
+    } else {
+      const nx = clamp(0.5 + gyroTiltY / 18, 0, 1);
+      applyTilt(gyroTiltX, gyroTiltY, -gyroTiltY * 6, -gyroTiltX * 6, nx);
+    }
+  }
+
+  // ---- Device orientation: phone tilt = hold the card ----
+  function onDeviceOrientation(e){
+    if (e.beta == null || e.gamma == null) return;
+    const beta = e.beta;  // front-back tilt (e.g. -90 to 90)
+    const gamma = e.gamma; // left-right tilt (e.g. -90 to 90)
+    const scale = 0.5;
+    const maxTilt = 18;
+    gyroTiltX = clamp((beta - 45) * scale, -maxTilt, maxTilt);
+    gyroTiltY = clamp(gamma * scale, -maxTilt, maxTilt);
+    if (pointerActive) return;
+    const hx = -gyroTiltY * 6;
+    const hy = -gyroTiltX * 6;
+    const nx = clamp(0.5 + gamma / 90, 0, 1);
+    applyTilt(gyroTiltX, gyroTiltY, hx, hy, nx);
+  }
+
+  function enableGyro(){
+    const req = typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission;
+    if (req) {
+      DeviceOrientationEvent.requestPermission()
+        .then(perm => { if (perm === 'granted') startGyro(); })
+        .catch(() => { usePointerOnly(); });
+    } else {
+      startGyro();
+    }
+  }
+
+  function startGyro(){
+    useGyro = true;
+    motionPrompt?.classList.add('hidden');
+    if (hint) hint.textContent = 'Tilt to morph the hologram: Human → Awakening → Synthetic. Tap to flip.';
+    window.addEventListener('deviceorientation', onDeviceOrientation, { passive: true });
+    onDeviceOrientation({ beta: 45, gamma: 0 });
+  }
+
+  function usePointerOnly(){
+    if (motionPrompt) motionPrompt.classList.add('hidden');
+    if (hint) hint.textContent = 'Move finger to morph: Human → Awakening → Synthetic. Tap to flip.';
+  }
+
+  motionBtn.addEventListener('click', () => {
+    enableGyro();
+  });
+
+  if (typeof DeviceOrientationEvent !== 'undefined' && !DeviceOrientationEvent.requestPermission) {
+    try {
+      window.addEventListener('deviceorientation', function once(e){ if (e.beta != null) { useGyro = true; startGyro(); window.removeEventListener('deviceorientation', once); } }, { once: true });
+      setTimeout(() => { if (!useGyro) usePointerOnly(); }, 800);
+    } catch (_) {
+      usePointerOnly();
+    }
+  } else {
+    /* iOS: prompt stays visible so user can tap "Enable motion" */
+  }
+
+  // ---- Pointer fallback (mouse + touch) ----
+  function onEnter(){
+    rect = card.getBoundingClientRect();
+    pointerActive = true;
+  }
+
+  card.addEventListener('mouseenter', onEnter);
+  card.addEventListener('mouseleave', onPointerLeave);
+  card.addEventListener('mousemove', (e) => { if (pointerActive) updateFromPointer(e.clientX, e.clientY); });
+
+  card.addEventListener('touchstart', (e)=>{ e.preventDefault(); onEnter(); updateFromPointer(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+  card.addEventListener('touchmove', (e)=>{ if (e.touches.length) updateFromPointer(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+  card.addEventListener('touchend', onPointerLeave);
+  card.addEventListener('touchcancel', onPointerLeave);
+
+  card.addEventListener('click', (e) => {
+    e.preventDefault();
+    card.classList.toggle('is-flipped');
+  });
+
+  setState(0.5);
+  
+  // Preload all morph images
+  [img1, img2, img3].forEach(img => {
+    if (img && img.src) {
+      const preload = new Image();
+      preload.src = img.src;
+    }
+  });
+})();
+</script>
