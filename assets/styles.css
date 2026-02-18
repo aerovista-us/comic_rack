@@ -1,0 +1,149 @@
+:root{
+  --bg: #0b0f14;
+  --panel: rgba(255,255,255,.06);
+  --panel2: rgba(255,255,255,.10);
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.65);
+  --stroke: rgba(255,255,255,.12);
+  --shadow: 0 10px 35px rgba(0,0,0,.55);
+  --radius: 18px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: radial-gradient(1200px 800px at 20% -10%, rgba(103, 232, 249, .18), transparent 60%),
+              radial-gradient(900px 600px at 100% 10%, rgba(167, 139, 250, .18), transparent 55%),
+              var(--bg);
+  color: var(--text);
+}
+
+/* Rack */
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 14px 14px calc(14px + env(safe-area-inset-top));
+  background: linear-gradient(to bottom, rgba(11,15,20,.95), rgba(11,15,20,.70));
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--stroke);
+}
+.brand{ display:flex; align-items:center; gap:12px; }
+.brand-dot{
+  width: 14px; height: 14px; border-radius: 999px;
+  background: linear-gradient(135deg, rgba(103,232,249,.9), rgba(167,139,250,.9));
+  box-shadow: 0 0 20px rgba(103,232,249,.35);
+}
+.brand-title{ font-weight: 750; letter-spacing:.2px; }
+.brand-sub{ font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.rack{ padding: 14px; }
+.rack-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (min-width: 780px){
+  .rack-grid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.card{
+  border: 1px solid var(--stroke);
+  background: var(--panel);
+  border-radius: var(--radius);
+  overflow:hidden;
+  box-shadow: var(--shadow);
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.card:active{ transform: scale(.985); }
+.card:hover{ background: var(--panel2); border-color: rgba(255,255,255,.18); }
+
+.cover{
+  aspect-ratio: 2 / 3;
+  width:100%;
+  display:block;
+  object-fit: cover;
+  background: rgba(255,255,255,.04);
+}
+.card-meta{ padding: 10px 10px 12px; }
+.card-title{ font-weight: 750; font-size: 14px; line-height: 1.2; }
+.card-sub{ margin-top: 4px; font-size: 12px; color: var(--muted); }
+
+/* Reader */
+.reader-body{ overflow:hidden; }
+.reader-topbar{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px calc(12px + env(safe-area-inset-top));
+  background: linear-gradient(to bottom, rgba(11,15,20,.95), rgba(11,15,20,.70));
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--stroke);
+}
+.reader-title{ flex:1; min-width: 0; text-align:center; }
+.reader-name{
+  font-weight: 800;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reader-meta{ margin-top: 2px; font-size: 12px; color: var(--muted); }
+.reader-actions{ display:flex; gap:8px; }
+
+.btn{
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,.07);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active{ transform: translateY(1px); }
+.btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+.reader-stage{
+  height: calc(100dvh - 64px);
+  display:flex;
+  flex-direction: column;
+  align-items:center;
+  justify-content:center;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  gap: 10px;
+}
+
+.flip-wrap{
+  width: min(92vw, 520px);
+  border-radius: 22px;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,.04);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.flip-wrap::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: linear-gradient(to bottom, rgba(255,255,255,.04), transparent 35%),
+              radial-gradient(800px 500px at 20% 0%, rgba(255,255,255,.06), transparent 55%);
+  mix-blend-mode: overlay;
+  opacity:.45;
+}
+
+.flipbook{ width:100%; height:100%; }
+.reader-hint{ font-size: 12px; color: var(--muted); }
