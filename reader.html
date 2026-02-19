@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Reader</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body class="reader-body">
@@ -21,10 +22,11 @@
     </div>
   </header>
 
-  <main class="reader-stage">
-    <div class="flip-wrap">
+  <main class="reader-stage" id="readerStage">
+    <div class="flip-wrap" id="flipWrap">
       <div id="flipbook" class="flipbook" aria-label="Comic reader"></div>
     </div>
+    <div class="reader-headline" id="readerHeadline" aria-live="polite"></div>
     <div class="reader-hint" id="hint">Swipe to turn pages</div>
   </main>
 

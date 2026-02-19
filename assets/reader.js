@@ -1,13 +1,19 @@
 // Reader: loads a comic by ?comic=ID from comics/<id>/manifest.json
 // Uses St.PageFlip from page-flip.browser.js (loaded in reader.html)
 
+const BASE = (() => {
+  const u = new URL(".", document.location.href);
+  return u.href.endsWith("/") ? u.href : u.href + "/";
+})();
+
 function getComicId() {
   const u = new URL(window.location.href);
   return u.searchParams.get("comic");
 }
 
 async function loadComicManifest(id) {
-  const res = await fetch(`comics/${encodeURIComponent(id)}/manifest.json`, { cache: "no-store" });
+  const url = BASE + "comics/" + encodeURIComponent(id) + "/manifest.json";
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(res.status === 404 ? "Comic not found" : `Failed to load: ${res.status}`);
   return res.json();
 }
@@ -27,7 +33,7 @@ const flipWrap = document.getElementById("flipWrap");
 const flipEl = document.getElementById("flipbook");
 const readerHeadline = document.getElementById("readerHeadline");
 
-btnBack.addEventListener("click", () => { window.location.href = "index.html"; });
+btnBack.addEventListener("click", () => { window.location.href = BASE + "index.html"; });
 
 function setLoading(loading) {
   if (comicName) comicName.textContent = loading ? "Loading…" : "";
@@ -46,7 +52,7 @@ function showError(message) {
   p.textContent = message;
   err.appendChild(p);
   const link = document.createElement("a");
-  link.href = "index.html";
+  link.href = BASE + "index.html";
   link.className = "btn";
   link.textContent = "← Back to Rack";
   err.appendChild(link);
@@ -58,7 +64,7 @@ function showError(message) {
 function normalizePages(comic) {
   const pages = comic.pages || [];
   const dir = comic.pageDir ? comic.pageDir.replace(/\/$/, "") + "/" : "";
-  const base = `comics/${encodeURIComponent(comic.id)}/${dir}`;
+  const base = BASE + "comics/" + encodeURIComponent(comic.id) + "/" + dir;
   return pages.map(p => {
     if (typeof p === "string") return { src: base + p, headline: null };
     return { src: base + (p.src || p), headline: p.headline || null };

@@ -14,22 +14,33 @@ function el(tag, attrs = {}, children = []) {
 const grid = document.getElementById("rackGrid");
 if (!grid) throw new Error("rackGrid not found");
 
-const ROOT_MANIFEST = "manifest.json";
+// Base URL for fetches (works when served from subpath e.g. /comic_rack/)
+const BASE = (() => {
+  const u = new URL(".", document.location.href);
+  return u.href.endsWith("/") ? u.href : u.href + "/";
+})();
 
 async function loadRootManifest() {
-  const res = await fetch(ROOT_MANIFEST, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Root manifest failed: ${res.status}`);
-  return res.json();
+  const url = BASE + "manifest.json";
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Manifest ${res.status}: ${res.statusText}`);
+  const data = await res.json().catch(() => {
+    throw new Error("Manifest is not valid JSON");
+  });
+  if (!data || typeof data !== "object") throw new Error("Invalid manifest");
+  return data;
 }
 
 async function loadComicManifest(path) {
-  const res = await fetch(`${path}/manifest.json`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Comic manifest failed: ${res.status}`);
+  const url = path.startsWith("http") ? path + "/manifest.json" : BASE + path.replace(/\/$/, "") + "/manifest.json";
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Comic manifest ${res.status}`);
   return res.json();
 }
 
 function renderCard(comic, path, isUnavailable = false) {
-  const coverUrl = isUnavailable ? "" : `${path}/${comic.cover || "cover.png"}`;
+  const basePath = path.startsWith("http") ? path : BASE + path.replace(/\/$/, "");
+  const coverUrl = isUnavailable ? "" : `${basePath}/${comic.cover || "cover.png"}`;
   const card = el("article", {
     class: isUnavailable ? "card card-unavailable" : "card",
     role: "button",
@@ -86,7 +97,7 @@ async function initRack() {
   try {
     root = await loadRootManifest();
   } catch (e) {
-    showRackError("Failed to load rack.", initRack);
+    showRackError("Failed to load rack. " + (e.message || String(e)), initRack);
     return;
   }
 

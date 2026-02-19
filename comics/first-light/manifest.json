@@ -1,0 +1,14 @@
+{
+  "id": "first-light",
+  "title": "First Light",
+  "subtitle": "4 pages • Intro + placeholders",
+  "cover": "cover.svg",
+  "pages": [
+    { "src": "intro.svg", "headline": "Chapter One" },
+    "p02.svg",
+    "p03.svg",
+    "p04.svg"
+  ],
+  "aspect": 1.5,
+  "theme": "default"
+}

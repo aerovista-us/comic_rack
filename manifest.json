@@ -1,23 +1,8 @@
-
 {
   "version": 1,
-  "mags": [
-    {
-      async function loadRootManifest() {
-  const res = await fetch('./manifest.json', { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Root manifest failed: ${res.status}`);
-  return res.json();
-}
-
-function openComic(id) {
-  window.location.href = `reader.html?comic=${encodeURIComponent(id)}`;
-}
-
-(async function initRack() {
-  const root = await loadRootManifest();
-  // build cards from root.mags
-  // each card uses mag.cover, mag.title, mag.tagline
-})()
-    }
+  "comics": [
+    { "id": "first-light", "path": "comics/first-light" },
+    { "id": "demo", "path": "comics/demo" },
+    { "id": "duo.ep1", "path": "comics/duo.ep1" }
   ]
 }
